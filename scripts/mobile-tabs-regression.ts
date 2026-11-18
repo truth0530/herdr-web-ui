@@ -123,7 +123,11 @@ async function checkPhoneRow(browser: Browser, origin: string, first: string, se
           : frame?.querySelector<HTMLElement>(".terminal-input textarea") ?? frame?.querySelector<HTMLElement>(".xterm-helper-textarea");
         field?.focus();
       });
-      const typingIn = (): Promise<string | null> => page.evaluate(() => document.activeElement?.closest(".pane-frame")?.getAttribute("data-layout-pane") ?? null);
+      // the pane whose own typing field (composer, terminal input or xterm's textarea) holds the focus, not any control in its frame
+      const typingIn = (): Promise<string | null> => page.evaluate(() => {
+        const field = document.activeElement;
+        return field?.matches(".composer-text, .terminal-input textarea, .xterm-helper-textarea") ? field.closest(".pane-frame")?.getAttribute("data-layout-pane") ?? null : null;
+      });
       assert.equal(await typingIn(), await shownPane(), `${label}: the open pane's field holds the typing`);
       await page.locator('.pane-slot .tab-strip [role="tab"][aria-selected="true"]').tap();
       await paneMenu.waitFor();
